@@ -8,11 +8,9 @@ class ClientMessageParser:
         """
             Possible requests from client to server
         """
-        possible_requests = \
+        self.possible_requests_without_content = \
             [
-                'login',
                 'logout',
-                'msg',
                 'names',
                 'help',
             ]
@@ -52,13 +50,13 @@ class ClientMessageParser:
         sender = payload['sender']  # In this case the server
         response = payload['response']
         content = payload['content']
-        return sender + ":" + response + "\n" + content + "\n"
+        return sender + ": " + response + "\n" + content + "\n"
     
     def parse_info(self, payload):
         sender = payload['sender']  # In this case the server
         response = payload['response']
         content = payload['content']
-        return sender + ":" + response + "\n" + content + "\n"
+        return sender + ": " + response + "\n" + content + "\n"
 
     def parse_message(self, payload):
         timestamp = payload['timestamp']
@@ -79,6 +77,8 @@ class ClientMessageParser:
         if not len(user_input) == 0:
             request = user_input.split(' ')[0]
             content = user_input[len(request)+1:]
+            if request in self.possible_requests_without_content:
+                content = 'None'
             return True, self.encode_request_to_json(request, content)
         return False, ""
 

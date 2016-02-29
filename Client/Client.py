@@ -35,7 +35,8 @@ class Client:
 
         # Run until the user sets exit to False
         while not self.exit:
-            payload = raw_input(">")
+            payload = raw_input("")
+            print "\n"
             if payload == 'exit':
                 self.exit = True
                 break
