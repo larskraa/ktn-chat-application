@@ -79,8 +79,10 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     # General message that tells the client that the received request is not valid
                     self.connection.send(self.request_parser.request_not_valid_json())
         except KeyboardInterrupt:
+            pass
+        finally:
             self.connection.close()
-            sys.exit("Server stopped...")
+            print "Client with IP: " + self.ip + " disconnected."
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
@@ -100,9 +102,21 @@ if __name__ == "__main__":
 
     No alterations are necessary
     """
-    HOST, PORT = 'localhost', 9998
-    print 'Server running...'
-
+    HOST, PORT = 'localhost', 10005
+    print "Server running..."
     # Set up and initiate the TCP server
-    server = ThreadedTCPServer((HOST, PORT), ClientHandler)
-    server.serve_forever()
+    server = ThreadedTCPServer
+    try:
+        server = ThreadedTCPServer((HOST, PORT), ClientHandler)
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print "Server shutdown..."
+    finally:
+        server.shutdown()
+
+
+
+
+
+
+

@@ -17,8 +17,6 @@ class ServerMessageParser:
 
         self.server_name = "Chat-server"
         self.server = server  # Hopefully we can get usernames etc. from here
-        self.logged_in_users = server.logged_in_users
-        self.username = server.username
 
         """
             Possible responds from server to clients
@@ -55,7 +53,7 @@ class ServerMessageParser:
             return self.possible_requests[payload['request']](payload)
         else:
             # invalid request (feedback to client: use 'help')
-            return self.request_not_valid_json()
+            return payload['request'], payload['content'], False, self.request_not_valid_json()
 
     """
         Each of the specific parse methods returns a tuple with:
@@ -83,7 +81,7 @@ class ServerMessageParser:
     def parse_msg(self, payload):
         verified_request = self.verify_msg_request(payload)
         return payload['request'], payload['content'], verified_request[0], \
-               self.get_message_response_json(self.username, payload['content'], verified_request)
+               self.get_message_response_json(self.server.username, payload['content'], verified_request)
 
     def parse_names(self, payload):
         verified_request = self.verify_names_request(payload)
@@ -205,7 +203,7 @@ class ServerMessageParser:
         # with the "names" keyword
         valid = True
         error_message = ""
-        if not payload['content'] == 0:
+        if not payload['content'] == 'None':
             valid = False
             error_message = "Enter 'names' without additional content to get a list og logged in users."
         return valid, error_message
@@ -215,7 +213,7 @@ class ServerMessageParser:
         # with the "help" keyword
         valid = True
         error_message = ""
-        if not payload['content'] == 0:
+        if not payload['content'] == 'None':
             valid = False
             error_message = "Enter 'help' without additional content for a list of possible actions."
         return valid, error_message

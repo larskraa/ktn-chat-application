@@ -42,9 +42,8 @@ class Client:
                 break
             encoded_message = self.client_message_parser.parse_user_input(payload)
             if not encoded_message[0]:
-                print encoded_message[1]
+                continue
             else:
-                print encoded_message[1]
                 self.send_payload(encoded_message[1])
 
         self.disconnect()
@@ -53,15 +52,12 @@ class Client:
 
 
     def disconnect(self):
-        # TODO: Handle disconnection
         self.connection.close()
 
     def receive_message(self, message):
-        # TODO: Handle incoming message, is it problematic to run this from another thread?
         print message
 
     def send_payload(self, data):
-        # TODO: Handle sending of a payload
         self.connection.send(data)
 
 
@@ -72,4 +68,4 @@ if __name__ == '__main__':
 
     No alterations are necessary
     """
-    client = Client('localhost', 9998)
+    client = Client('localhost', 10005)

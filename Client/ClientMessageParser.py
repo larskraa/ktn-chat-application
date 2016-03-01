@@ -50,13 +50,13 @@ class ClientMessageParser:
         sender = payload['sender']  # In this case the server
         response = payload['response']
         content = payload['content']
-        return sender + ": " + response + "\n" + content + "\n"
-    
+        return content + "\n"
+
     def parse_info(self, payload):
         sender = payload['sender']  # In this case the server
         response = payload['response']
         content = payload['content']
-        return sender + ": " + response + "\n" + content + "\n"
+        return content + "\n"
 
     def parse_message(self, payload):
         timestamp = payload['timestamp']
@@ -74,7 +74,7 @@ class ClientMessageParser:
         return "Client:\n" + "The server attempted to send a response, but the response was invalid."
 
     def parse_user_input(self, user_input):
-        if not len(user_input) == 0:
+        if not len(user_input.strip()) == 0:
             request = user_input.split(' ')[0]
             content = user_input[len(request)+1:]
             if request in self.possible_requests_without_content:
