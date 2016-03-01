@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
 from ClientMessageParser import ClientMessageParser
+from Queue import Queue
 
 
-class MessageReceiver(Thread):
+class MessageSender(Thread):
 
     """
     This is the message receiver class. The class inherits Thread, something that
@@ -22,17 +23,22 @@ class MessageReceiver(Thread):
         self.client = client
         self.connection = connection
         self.client_message_parser = ClientMessageParser()
+        self.payload_queue = Queue()
 
 
 
     def run(self):
         while True:
-            payload = self.connection.recv(4096)
-            message = self.client_message_parser.parse(payload)
-            self.print_message(message)
+            if not self.payload_queue.empty():
+                payload = self.payload_queue.get()
+                self.send_payload_from_queue(payload)
 
 
 
-    @staticmethod
-    def print_message(message):
-        print message
+    def queue_payload_for_sending(self, payload):
+        self.payload_queue.put(payload)
+
+
+
+    def send_payload_from_queue(self, payload):
+        self.connection.sendall(payload)

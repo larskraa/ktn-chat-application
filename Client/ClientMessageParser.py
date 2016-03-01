@@ -93,6 +93,7 @@ class ClientMessageParser:
             }
         return json.dumps(request_payload)
 
+
     def request_is_valid(self, request):
         if len(self.possible_requests) == 0:
             return False

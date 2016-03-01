@@ -2,6 +2,7 @@
 import socket
 from MessageReceiver import MessageReceiver
 from ClientMessageParser import ClientMessageParser
+from MessageSender import MessageSender
 
 
 class Client:
@@ -29,36 +30,41 @@ class Client:
         # Initiate the connection to the server
         self.connection.connect(self.server_address)
 
-        # Initiate the message receiver class as a new thread and start the thread
-        message_receiver_thread = MessageReceiver(self, self.connection)
-        message_receiver_thread.start()
+        # Instantiate the message receiver class as a new thread and start the thread
+        self.message_receiver_thread = MessageReceiver(self, self.connection)
+        self.message_receiver_thread.start()
+
+        # Instantiate the message sender class as a new thread and start the thread
+        self.message_sender_thread = MessageSender(self, self.connection)
+        self.message_sender_thread.start()
 
         # Run until the user sets exit to False
-        while not self.exit:
-            payload = raw_input("")
-            print "\n"
-            if payload == 'exit':
-                self.exit = True
-                break
-            encoded_message = self.client_message_parser.parse_user_input(payload)
-            if not encoded_message[0]:
-                continue
-            else:
-                self.send_payload(encoded_message[1])
+        try:
+            while not self.exit:
+                payload = raw_input("")
+                print "\n"
+                if payload == 'exit':
+                    self.exit = True
+                    continue
+                encoded_message = self.client_message_parser.parse_user_input(payload)
+                if not encoded_message[0]:
+                    continue
+                else:
+                    self.message_sender_thread.queue_payload_for_sending(encoded_message[1])
 
-        self.disconnect()
-        print "Disconnected from server."
-        # TODO: handle logouts with exit?
+            # TODO: handle logouts with exit?
+        finally:
+            manual_logout = self.client_message_parser.parse_user_input('logout')
+            self.message_sender_thread.queue_payload_for_sending(manual_logout)
+            self.disconnect()
+            print "Disconnected from server."
+
 
 
     def disconnect(self):
         self.connection.close()
 
-    def receive_message(self, message):
-        print message
 
-    def send_payload(self, data):
-        self.connection.send(data)
 
 
 if __name__ == '__main__':
