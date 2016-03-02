@@ -19,9 +19,6 @@ class ClientHandler(SocketServer.BaseRequestHandler):
     logic for the server, you must write it outside this class
     """
 
-
-
-
     def setup(self):
         """
         Setup() is run by __init__ in BaseRequestHandler
@@ -34,17 +31,12 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         self.logged_in = False
         self.request_parser = ServerMessageParser(self)
 
-
-
-
     def handle(self):
         """
         This method handles the connection between a client and the server.
         """
         print "Client connected on IP: " + self.ip
-
-
-        #  Loop that listens for messages from the client
+        threading._active
         try:
 
             while True:
@@ -55,25 +47,15 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                 request_is_valid = parsed_payload[2]
                 json_response = parsed_payload[3]
 
-
                 # LOGIN
-
                 if not self.logged_in:
                     if self.request_parser.is_login(request) and request_is_valid:
-                        self.username = content
-                        self.logged_in = True
-                        with self.server.logged_in_clients_lock:
-                            # Adding the client to the set of logged in clients
-                            self.server.logged_in_clients[self.username] = self.connection
-                        logged_out_json = self.request_parser.user_logged_in_json()
-                        for client in self.server.logged_in_clients:
-                            if not client == self.username:
-                                client_connection = self.server.logged_in_clients[client]
-                                client_connection.sendall(logged_out_json)
+                        self.login_user(content)
                         print "User " + self.username + " logged in."
                         self.connection.sendall(json_response)
                         # self.connection.sendall(self.request_parser.history_response())
                         #  TODO: Send history response, from a history log somewhere, added method but not complete
+
                     elif self.request_parser.is_login(request) and not request_is_valid:
                         self.connection.sendall(json_response)
 
@@ -87,70 +69,92 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     # The case when the user is logged in, but is still trying to login
                     self.connection.sendall(json_response)
 
-
                 # LOGOUT
-
                 elif self.request_parser.is_logout(request) and request_is_valid:
                     self.connection.sendall(json_response)
-                    self.logged_in = False
-                    self.server.logged_in_clients.pop(self.username)
-                    logged_out_json = self.request_parser.user_logged_out_json()
-                    for client in self.server.logged_in_clients:
-                        client_connection = self.server.logged_in_clients[client]
-                        client_connection.sendall(logged_out_json)
+                    self.logout_user()
                     print "User " + self.username + " logged out."
 
                 elif self.request_parser.is_logout(request) and not request_is_valid:
                     self.connection.sendall(json_response)
 
-
                 # MESSAGE
-
                 elif self.request_parser.is_message(request) and request_is_valid:
-                    with self.server.logged_in_clients_lock:
-                            for client in self.server.logged_in_clients:
-                                client_user = client
-                                client_connection = self.server.logged_in_clients[client]
-                                try:
-                                    client_connection.sendall(json_response)
-                                except socket.error:
-                                    print "Something went wrong when sending to client " + client_user
+                    self.send_message_to_all_clients(json_response)
 
                 elif self.request_parser.is_message(request) and not request_is_valid:
                     # Send only to the requesting client. This will be an error message.
                     self.connection.sendall(json_response)
 
-
                 # NAMES
-
                 elif self.request_parser.is_names(request) and request_is_valid:
                     self.connection.sendall(json_response)
 
                 elif self.request_parser.is_names(request) and not request_is_valid:
                     self.connection.sendall(json_response)
 
-
                 # HELP
-
                 elif self.request_parser.is_help(request) and request_is_valid:
                     self.connection.sendall(json_response)
 
                 elif self.request_parser.is_help(request) and not request_is_valid:
                     self.connection.sendall(json_response)
 
-
                 # IF NO VALID REQUEST
-
                 else:
                     # General message that tells the client that the received request is not valid
                     self.connection.sendall(self.request_parser.request_not_valid_json())
 
-        finally:
-            self.connection.close()
+        except socket.error:
             print "Client with IP: " + self.ip + " disconnected."
+        finally:
+            if self.logged_in:
+                self.logout_user()
+            self.connection.close()
 
 
 
+    def login_user(self, username):
+        self.username = username
+        self.logged_in = True
+        with self.server.logged_in_clients_lock:
+            # Adding the client to the set of logged in clients
+            self.server.logged_in_clients[self.username] = self.connection
+        logged_in_json = self.request_parser.user_logged_in_json()
+        for client in self.server.logged_in_clients:
+            if not client == self.username:
+                client_connection = self.server.logged_in_clients[client]
+                client_connection.sendall(logged_in_json)
+
+    def logout_user(self):
+        self.logged_in = False
+        self.remove_client(self.username)
+
+    # Sends a message to all connected clients.
+    # If one of the clients are disconnected, the client is removed and all other clients will be notified
+    def send_message_to_all_clients(self, message_json):
+        with self.server.logged_in_clients_lock:
+            for client in self.server.logged_in_clients:
+                client_user = client
+                client_connection = self.server.logged_in_clients[client]
+                try:
+                    client_connection.sendall(message_json)
+                except socket.error:
+                    print client_user + "was disconnected."
+                    self.remove_client(client_user)
+
+    def remove_client(self, username):
+        for client in self.server.logged_in_clients:
+            if username == client:
+                self.server.logged_in_clients.pop(username)
+                self.notify_clients_on_client_logout(username)
+                break
+
+    def notify_clients_on_client_logout(self, logout_username):
+        logged_out_json = self.request_parser.user_logged_out_json(logout_username)
+        for client in self.server.logged_in_clients:
+            client_connection = self.server.logged_in_clients[client]
+            client_connection.sendall(logged_out_json)
 
 
 
@@ -167,8 +171,6 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # Hold all logged in clients
     logged_in_clients = {}
     logged_in_clients_lock = threading.Lock()
-
-
 
 
 
