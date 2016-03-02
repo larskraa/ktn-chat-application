@@ -43,12 +43,11 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         """
         print "Client connected on IP: " + self.ip
 
-        #  Loop that listens for messages from the client
 
+        #  Loop that listens for messages from the client
         try:
 
             while True:
-                #  TODO: handle large payloads properly. (E.g. add /r/n in client message and check for it)
                 payload = self.connection.recv(4096)
                 parsed_payload = self.request_parser.parse(payload)
                 request = parsed_payload[0]
@@ -84,7 +83,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     else:
                         self.connection.sendall(self.request_parser.not_logged_in_json())
 
-                elif self.request_parser.is_login(request) and not request_is_valid:
+                elif self.logged_in and self.request_parser.is_login(request) and not request_is_valid:
                     # The case when the user is logged in, but is still trying to login
                     self.connection.sendall(json_response)
 
