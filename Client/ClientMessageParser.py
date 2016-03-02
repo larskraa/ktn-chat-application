@@ -5,9 +5,7 @@ class ClientMessageParser:
 
     def __init__(self):
 
-        """
-            Possible requests from client to server
-        """
+        # Possible requests to server from the client that does not require content
         self.possible_requests_without_content = \
             [
                 'logout',
@@ -15,9 +13,7 @@ class ClientMessageParser:
                 'help',
             ]
 
-        """
-            Possible responses from server
-        """
+        # Possible responses from the server to the client
         self.error_response = 'error'
         self.info_response = 'info'
         self.message_response = 'message'
@@ -33,6 +29,10 @@ class ClientMessageParser:
 
         }
 
+
+    """
+        Methods for parsing incoming responses from the chat server
+    """
     def parse(self, payload):
         # Assumes that the payload is in json format
         payload = json.loads(payload)
@@ -41,10 +41,6 @@ class ClientMessageParser:
             return self.possible_responses[payload['response']](payload)
         else:
             return self.response_not_valid()
-
-    """
-        Methods for parsing incoming responses from the chat server
-    """
 
     def parse_error(self, payload):
         sender = payload['sender']  # In this case the server
@@ -73,17 +69,23 @@ class ClientMessageParser:
     def response_not_valid(self):
         return "Client:\n" + "The server attempted to send a response, but the response was invalid."
 
+
+    """
+        User-input
+    """
     def parse_user_input(self, user_input):
-        if not len(user_input.strip()) == 0:
-            request = user_input.split(' ')[0]
+        request = user_input.split(' ')[0]
+        if request in self.possible_requests_without_content:
+            content = 'None'
+        else:
             content = user_input[len(request)+1:]
-            if request in self.possible_requests_without_content:
-                content = 'None'
-            return True, self.encode_request_to_json(request, content)
-        return False, ""
+        return self.encode_request_to_json(request, content)
 
 
 
+    """
+        Method that returns json in the format that the server requires
+    """
     @staticmethod
     def encode_request_to_json(request, content):
         request_payload = \
@@ -94,6 +96,9 @@ class ClientMessageParser:
         return json.dumps(request_payload)
 
 
+    """
+        Requests
+    """
     def request_is_valid(self, request):
         if len(self.possible_requests) == 0:
             return False

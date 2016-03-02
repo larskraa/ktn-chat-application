@@ -13,26 +13,19 @@ import re
 
 class ServerMessageParser:
 
-
-
-
     def __init__(self, client_handler_class):
 
         self.server_name = "Chat-server"
-        self.client_handler_class = client_handler_class  # Hopefully we can get usernames etc. from here
+        self.client_handler_class = client_handler_class
         self.server = self.client_handler_class.server
 
-        """
-            Possible responds from server to clients
-        """
+        # Possible response from server to client
         self.error_response = 'error'
         self.info_response = 'info'
         self.message_response = 'message'
         self.history_response = 'history'
 
-        """
-            Possible requests from client to server
-        """
+        # Possible requests from client to server
         self.login_request = 'login'
         self.logout_request = 'logout'
         self.message_request = 'msg'
@@ -51,7 +44,6 @@ class ServerMessageParser:
 
     def parse(self, payload):
         # Assumes that the payload is in json format
-        # Converts the json to a python dictionary
         payload = json.loads(payload)
 
         if payload['request'] in self.possible_requests:
@@ -59,9 +51,6 @@ class ServerMessageParser:
         else:
             # invalid request (feedback to client: use 'help')
             return payload['request'], payload['content'], False, self.request_not_valid_json()
-
-
-
 
 
     """
@@ -77,7 +66,6 @@ class ServerMessageParser:
         If the request is valid, the json response may be sent to the client(s)
     """
 
-
     def parse_login(self, payload):
         verified_request = self.verify_login_request(payload)
         request = payload['request']
@@ -85,7 +73,6 @@ class ServerMessageParser:
         valid_request = verified_request[0]
         json_response = self.get_login_response_json(verified_request, content)
         return request, content, valid_request, json_response
-
 
     def parse_logout(self, payload):
         verified_request = self.verify_logout_request(payload)
@@ -95,7 +82,6 @@ class ServerMessageParser:
         json_response = self.get_logout_response_json(verified_request)
         return request, content, valid_request, json_response
 
-
     def parse_msg(self, payload):
         verified_request = self.verify_msg_request(payload)
         request = payload['request']
@@ -103,7 +89,6 @@ class ServerMessageParser:
         valid_request = verified_request[0]
         json_response = self.get_message_response_json(verified_request, content, self.client_handler_class.username)
         return request, content, valid_request, json_response
-
 
     def parse_names(self, payload):
         verified_request = self.verify_names_request(payload)
@@ -113,7 +98,6 @@ class ServerMessageParser:
         json_response = self.get_names_response_json(self.server.logged_in_clients, verified_request)  # TODO: WHERE DO WE GLOBALLY STORE LOGGED IN USERS AND CONNECTIONS??
         return request, content, valid_request, json_response
 
-
     def parse_help(self, payload):
         verified_request = self.verify_help_request(payload)
         request = payload['request']
@@ -121,9 +105,6 @@ class ServerMessageParser:
         valid_request = verified_request[0]
         json_response = self.get_help_response_json(verified_request)
         return request, content, valid_request, json_response
-
-
-
 
 
     """
@@ -140,7 +121,6 @@ class ServerMessageParser:
             content = "Login successful. Welcome to the chat " + username + "."
         return self.encode_response_to_json(self.server_name, response, content)
 
-
     def get_logout_response_json(self, verified_request):
         valid = verified_request[0]
         error_message = verified_request[1]
@@ -152,7 +132,6 @@ class ServerMessageParser:
             content = "Logout successful. Bye."
         return self.encode_response_to_json(self.server_name, response, content)
 
-
     def get_message_response_json(self, verified_request, content, sender):
         valid = verified_request[0]
         error_message = verified_request[1]
@@ -162,7 +141,6 @@ class ServerMessageParser:
         else:
             response = self.message_response
         return self.encode_response_to_json(sender, response, content)
-
 
     def get_names_response_json(self, usernames, verified_request):
         # usernames is assumed to be a dictionary
@@ -178,7 +156,6 @@ class ServerMessageParser:
                 content += ("- " + username + "\n")
         return self.encode_response_to_json(self.server_name, response, content)
 
-
     def get_help_response_json(self, verified_request):
         valid = verified_request[0]
         error_message = verified_request[1]
@@ -188,18 +165,15 @@ class ServerMessageParser:
         else:
             response = self.info_response
             content = 'Possible requests:\n' \
-                '- login <username>  - 3-20 normal characters (a-z, A-Z, 0-9, _)\n' \
-                '- logout\n' \
-                '- msg <content>\n' \
-                '- names\n' \
-                '- help\n'
+                '- login <username>       3-20 normal characters (a-z, A-Z, 0-9, _)\n' \
+                '- logout                 logout from the chat\n' \
+                '- msg <content>          send a message to all logged in users\n' \
+                '- names                  get a list of all logged in users\n' \
+                '- help                   get a list of possible actions\n'
         return self.encode_response_to_json(self.server_name, response, content)
-
 
     def get_history_response_json(self, history_file_path):
         pass  # Read from file and return history as json
-
-
 
 
 
@@ -211,8 +185,6 @@ class ServerMessageParser:
         Respond with tuple (True, "") or (False, "error message")
     """
 
-
-    #  TODO: implement logic here
     def verify_login_request(self, payload):
         # Check if username contains only allowed characters
         # Check if username is not taken
@@ -230,13 +202,12 @@ class ServerMessageParser:
             error_message = "You are already logged in."
         elif len(username) < 3 or len(username) > 20 or not re.match("^[a-zA-Z0-9_]*$", username):
             valid = False
-            error_message = "If you are trying to log in, enter 'login <username>.\n" \
+            error_message = "If you are trying to log in, enter 'login <username>.'\n" \
                             "<username> must be between 3 and 20 normal characters. [a-z, A-Z, 0-9, _]"
         elif username_taken:
             valid = False
             error_message = "That username has already been taken. Try another one."
         return valid, error_message
-
 
     def verify_logout_request(self, payload):
         # Should return false if there is actual content attached
@@ -248,11 +219,9 @@ class ServerMessageParser:
             error_message = "If you are trying to log out, enter 'logout' without additional content."
         return valid, error_message
 
-
     def verify_msg_request(self, payload):
         # Currently no need to check the message content for validity
         return True, ""
-
 
     def verify_names_request(self, payload):
         # Should return false if there is actual content attached
@@ -263,7 +232,6 @@ class ServerMessageParser:
             valid = False
             error_message = "Enter 'names' without additional content to get a list og logged in users."
         return valid, error_message
-
 
     def verify_help_request(self, payload):
         # Should return false if there is actual content attached
@@ -278,31 +246,24 @@ class ServerMessageParser:
 
 
 
-
     """
         Methods for checking request type
     """
 
-
     def is_login(self, request):
         return request == self.login_request
-
 
     def is_logout(self, request):
         return request == self.logout_request
 
-
     def is_message(self, request):
         return request == self.message_request
-
 
     def is_help(self, request):
         return request == self.help_request
 
-
     def is_names(self, request):
         return request == self.names_request
-
 
 
 
@@ -317,7 +278,6 @@ class ServerMessageParser:
             'content': the content of the response displayed to the client user
         }
     """
-
 
     @staticmethod
     def encode_response_to_json(sender, response, content):
@@ -335,7 +295,6 @@ class ServerMessageParser:
 
         return json.dumps(response_message)
 
-
     def not_logged_in_json(self):
         # Local time in format 'Tue Jan 13 10:17:09 2009'
         localtime = time.asctime(time.localtime(time.time()))
@@ -349,7 +308,6 @@ class ServerMessageParser:
             }
         return json.dumps(response_message)
 
-
     def request_not_valid_json(self):
         # Local time in format 'Tue Jan 13 10:17:09 2009'
         localtime = time.asctime(time.localtime(time.time()))
@@ -362,16 +320,15 @@ class ServerMessageParser:
             }
         return json.dumps(response_message)
 
-
-    def user_logged_out_json(self):
+    def user_logged_out_json(self, username):
         # Local time in format 'Tue Jan 13 10:17:09 2009'
         localtime = time.asctime(time.localtime(time.time()))
         response_message = \
             {
                 'timestamp': localtime,
-                'sender': self.client_handler_class.username,
+                'sender': self.server_name,
                 'response': self.info_response,
-                'content': self.client_handler_class.username + " logged out."
+                'content': username + " logged out."
             }
         return json.dumps(response_message)
 

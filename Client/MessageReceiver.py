@@ -11,7 +11,6 @@ class MessageReceiver(Thread):
     the chat client to both send and receive messages at the same time
     """
 
-
     def __init__(self, client, connection):
         """
         This method is executed when creating a new MessageReceiver object
@@ -23,15 +22,11 @@ class MessageReceiver(Thread):
         self.connection = connection
         self.client_message_parser = ClientMessageParser()
 
-
-
     def run(self):
         while True:
             payload = self.connection.recv(4096)
             message = self.client_message_parser.parse(payload)
             self.print_message(message)
-
-
 
     @staticmethod
     def print_message(message):
