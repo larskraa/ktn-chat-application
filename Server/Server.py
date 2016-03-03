@@ -36,7 +36,6 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         This method handles the connection between a client and the server.
         """
         print "Client connected on IP: " + self.ip
-        threading._active
         try:
 
             while True:
@@ -48,26 +47,12 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                 json_response = parsed_payload[3]
 
                 # LOGIN
-                if not self.logged_in:
-                    if self.request_parser.is_login(request) and request_is_valid:
-                        self.login_user(content)
-                        print "User " + self.username + " logged in."
-                        self.connection.sendall(json_response)
-                        # self.connection.sendall(self.request_parser.history_response())
-                        #  TODO: Send history response, from a history log somewhere, added method but not complete
-
-                    elif self.request_parser.is_login(request) and not request_is_valid:
-                        self.connection.sendall(json_response)
-
-                    elif self.request_parser.is_help(request) and request_is_valid:
-                        self.connection.send(json_response)
-
-                    else:
-                        self.connection.sendall(self.request_parser.not_logged_in_json())
-
-                elif self.logged_in and self.request_parser.is_login(request) and not request_is_valid:
-                    # The case when the user is logged in, but is still trying to login
+                if self.request_parser.is_login(request) and request_is_valid:
+                    self.login_user(content)
+                    print "User " + self.username + " logged in."
                     self.connection.sendall(json_response)
+                    # self.connection.sendall(self.request_parser.history_response())
+                    #  TODO: Send history response, from a history log somewhere, added method but not complete
 
                 # LOGOUT
                 elif self.request_parser.is_logout(request) and request_is_valid:
@@ -75,35 +60,8 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     self.logout_user()
                     print "User " + self.username + " logged out."
 
-                elif self.request_parser.is_logout(request) and not request_is_valid:
-                    self.connection.sendall(json_response)
-
-                # MESSAGE
-                elif self.request_parser.is_message(request) and request_is_valid:
-                    self.send_message_to_all_clients(json_response)
-
-                elif self.request_parser.is_message(request) and not request_is_valid:
-                    # Send only to the requesting client. This will be an error message.
-                    self.connection.sendall(json_response)
-
-                # NAMES
-                elif self.request_parser.is_names(request) and request_is_valid:
-                    self.connection.sendall(json_response)
-
-                elif self.request_parser.is_names(request) and not request_is_valid:
-                    self.connection.sendall(json_response)
-
-                # HELP
-                elif self.request_parser.is_help(request) and request_is_valid:
-                    self.connection.sendall(json_response)
-
-                elif self.request_parser.is_help(request) and not request_is_valid:
-                    self.connection.sendall(json_response)
-
-                # IF NO VALID REQUEST
                 else:
-                    # General message that tells the client that the received request is not valid
-                    self.connection.sendall(self.request_parser.request_not_valid_json())
+                    self.connection.sendall(json_response)
 
         except socket.error:
             print "Client with IP: " + self.ip + " disconnected."

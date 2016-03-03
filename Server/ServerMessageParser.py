@@ -41,10 +41,14 @@ class ServerMessageParser:
             self.help_request: self.parse_help
         }
 
+        self.login_error_message = "You are not logged in. Enter 'login <username>' to log in.\n" \
+                                   "<username> must be between 3 and 20 normal characters. [a-z, A-Z, 0-9, _]"
+
 
     def parse(self, payload):
         # Assumes that the payload is in json format
         payload = json.loads(payload)
+        print payload
 
         if payload['request'] in self.possible_requests:
             return self.possible_requests[payload['request']](payload)
@@ -194,9 +198,9 @@ class ServerMessageParser:
         error_message = ""
         username_taken = False
         for client in self.server.logged_in_clients:
+            # Checking for valid usernames
             if username == client:
                 username_taken = True
-        # Checking for valid usernames
         if self.client_handler_class.logged_in:
             valid = False
             error_message = "You are already logged in."
@@ -212,25 +216,38 @@ class ServerMessageParser:
     def verify_logout_request(self, payload):
         # Should return false if there is actual content attached
         # with the "logout" keyword
-        valid = True
-        error_message = ""
-        if not payload['content'] == 'None':
+        if self.client_handler_class.logged_in:
+            valid = True
+            error_message = ""
+            if not payload['content'] == 'None':
+                valid = False
+                error_message = "If you are trying to log out, enter 'logout' without additional content."
+        else:
             valid = False
-            error_message = "If you are trying to log out, enter 'logout' without additional content."
+            error_message = self.login_error_message
         return valid, error_message
 
     def verify_msg_request(self, payload):
-        # Currently no need to check the message content for validity
-        return True, ""
+        if self.client_handler_class.logged_in:
+            valid = True
+            error_message = ""
+        else:
+            valid = False
+            error_message = self.login_error_message
+        return valid, error_message
 
     def verify_names_request(self, payload):
         # Should return false if there is actual content attached
         # with the "names" keyword
-        valid = True
-        error_message = ""
-        if not payload['content'] == 'None':
+        if self.client_handler_class.logged_in:
+            valid = True
+            error_message = ""
+            if not payload['content'] == 'None':
+                valid = False
+                error_message = "Enter 'names' without additional content to get a list og logged in users."
+        else:
             valid = False
-            error_message = "Enter 'names' without additional content to get a list og logged in users."
+            error_message = self.login_error_message
         return valid, error_message
 
     def verify_help_request(self, payload):
@@ -264,6 +281,12 @@ class ServerMessageParser:
 
     def is_names(self, request):
         return request == self.names_request
+
+    def is_possible_request(self, request):
+        for possible_request in self.possible_requests:
+            if self.possible_requests[possible_request] == request:
+                return True
+        return False
 
 
 
@@ -343,3 +366,4 @@ class ServerMessageParser:
                 'content': self.client_handler_class.username + " logged in."
             }
         return json.dumps(response_message)
+
