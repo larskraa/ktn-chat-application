@@ -48,8 +48,6 @@ class ServerMessageParser:
     def parse(self, payload):
         # Assumes that the payload is in json format
         payload = json.loads(payload)
-        print payload
-
         if payload['request'] in self.possible_requests:
             return self.possible_requests[payload['request']](payload)
         else:
