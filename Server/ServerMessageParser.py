@@ -45,6 +45,7 @@ class ServerMessageParser:
                                    "<username> must be between 3 and 20 normal characters. [a-z, A-Z, 0-9, _]"
 
 
+
     def parse(self, payload):
         # Assumes that the payload is in json format
         payload = json.loads(payload)
@@ -280,11 +281,6 @@ class ServerMessageParser:
     def is_names(self, request):
         return request == self.names_request
 
-    def is_possible_request(self, request):
-        for possible_request in self.possible_requests:
-            if self.possible_requests[possible_request] == request:
-                return True
-        return False
 
 
 

@@ -29,7 +29,6 @@ class ClientMessageParser:
 
         }
 
-
     """
         Methods for parsing incoming responses from the chat server
     """

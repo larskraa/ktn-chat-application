@@ -60,6 +60,9 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     self.logout_user()
                     print "User " + self.username + " logged out."
 
+                elif self.request_parser.is_message(request) and request_is_valid:
+                    self.send_message_toll_clients(json_response)
+
                 else:
                     self.connection.sendall(json_response)
 
