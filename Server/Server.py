@@ -3,6 +3,7 @@ import SocketServer
 from ServerMessageParser import ServerMessageParser
 import threading
 import socket
+import json
 
 """
 Variables and functions that must be used by all the ClientHandler objects
@@ -51,8 +52,9 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     self.login_user(content)
                     print "User " + self.username + " logged in."
                     self.connection.sendall(json_response)
-                    # self.connection.sendall(self.request_parser.history_response())
-                    #  TODO: Send history response, from a history log somewhere, added method but not complete
+                    is_log, history_response = self.request_parser.get_history_response_json()
+                    if is_log:
+                        self.connection.sendall(history_response)
 
                 # LOGOUT
                 elif self.request_parser.is_logout(request) and request_is_valid:
@@ -61,7 +63,8 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     print "User " + self.username + " logged out."
 
                 elif self.request_parser.is_message(request) and request_is_valid:
-                    self.send_message_toll_clients(json_response)
+                    self.send_message_to_all_clients(json_response)
+                    self.log_message(json_response, self.server.log_write_lock, self.server.log_file_path)
 
                 else:
                     self.connection.sendall(json_response)
@@ -72,7 +75,6 @@ class ClientHandler(SocketServer.BaseRequestHandler):
             if self.logged_in:
                 self.logout_user()
             self.connection.close()
-
 
 
     def login_user(self, username):
@@ -117,6 +119,18 @@ class ClientHandler(SocketServer.BaseRequestHandler):
             client_connection = self.server.logged_in_clients[client]
             client_connection.sendall(logged_out_json)
 
+    def log_message(self, message_json, lock, path):
+        message = json.loads(message_json)
+        timestamp = message['timestamp']
+        sender = message['sender']
+        content = message['content']
+        log_string =  sender + ": " + timestamp + "\n" + content + "\n\n"
+        with lock:
+            with open(path, "a") as log:
+                log.write(log_string)
+
+
+
 
 
 
@@ -132,6 +146,10 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     # Hold all logged in clients
     logged_in_clients = {}
     logged_in_clients_lock = threading.Lock()
+
+    log_file_path = "/Users/Lars/Code/ktn-chat-application/Log/message_history.log"
+    log_write_lock = threading.Lock()
+
 
 
 

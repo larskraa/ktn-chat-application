@@ -63,7 +63,7 @@ class ClientMessageParser:
     def parse_history(self, payload):
         response = payload['response']
         content = payload['content']
-        return response + ":\n" + content + "\n"
+        return "Chat history:\n\n" + content + "-------------------" + "\n"
 
     def response_not_valid(self):
         return "Client:\n" + "The server attempted to send a response, but the response was invalid."

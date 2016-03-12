@@ -175,9 +175,9 @@ class ServerMessageParser:
                 '- help                   get a list of possible actions\n'
         return self.encode_response_to_json(self.server_name, response, content)
 
-    def get_history_response_json(self, history_file_path):
-        pass  # Read from file and return history as json
-
+    def get_history_response_json(self):
+        is_log, messages = self.get_log_messages(self.client_handler_class.server.log_file_path)
+        return is_log, self.encode_response_to_json(self.server_name, self.history_response, messages)
 
 
     """
@@ -282,6 +282,17 @@ class ServerMessageParser:
         return request == self.names_request
 
 
+
+
+
+    def get_log_messages(self, path):
+        log = open(path, "r")
+        messages = log.read()
+        log.close()
+        is_log = True
+        if len(messages.strip()) == 0:
+            is_log = False
+        return is_log, messages
 
 
     """
